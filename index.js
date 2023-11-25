@@ -136,10 +136,68 @@ async function run() {
       res.send(result);
     });
 
+    const { ObjectId } = require("mongodb");
+
+    app.patch("/menu/:id", async (req, res) => {
+      try {
+        const item = req.body;
+        const id = req.params.id;
+
+        // Convert id to ObjectId
+        const filter = { _id: new ObjectId(id) };
+
+        const updatedDoc = {
+          $set: {
+            name: item.name,
+            category: item.category,
+            price: item.price,
+            recipe: item.recipe,
+            image: item.image,
+          },
+        };
+
+        // Update the document
+        const result = await menuCollection.updateOne(filter, updatedDoc);
+
+        if (result.matchedCount > 0) {
+          res.send({
+            acknowledged: result.acknowledged,
+            modifiedCount: result.modifiedCount,
+            upsertedId: result.upsertedId,
+            upsertedCount: result.upsertedCount,
+            matchedCount: result.matchedCount,
+          });
+        } else {
+          // If no document is matched, return a 404 status
+          res.status(404).send({
+            acknowledged: false,
+            modifiedCount: 0,
+            upsertedId: null,
+            upsertedCount: 0,
+            matchedCount: 0,
+            error: "Document not found",
+          });
+        }
+      } catch (error) {
+        // Handle any errors that occur during the update
+        console.error("Error updating menu item:", error);
+        res.status(500).send({ error: "Internal server error" });
+      }
+    });
+
     app.delete("/menu/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      query = { _id: id };
+      const query = { _id: id };
       const result = await menuCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.get("/menu/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log("ID:", id);
+
+      const query = { _id: id };
+      const result = await menuCollection.findOne(query);
       res.send(result);
     });
 
